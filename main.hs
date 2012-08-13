@@ -3,6 +3,7 @@
 module Main where
 
 import System.Environment
+import System.Exit
 import Control.Monad
 import Control.Monad.Error
 
@@ -343,5 +344,25 @@ showEvaledConsoleInput = evalConsoleInput >>= showEvaluatedM
 printEvaledConsoleInput :: IO ()
 printEvaledConsoleInput = showEvaledConsoleInput >>= putStrLn
 
+showEvaluatedString :: String -> String
+showEvaluatedString = showEvaluated . eitherEvalString
+
+showEvaluatedStringM :: (Monad m) => String -> m String
+showEvaluatedStringM = return . showEvaluatedString
+
+showEvaledFileFromName :: FilePath -> IO String
+showEvaledFileFromName fileName = (readFile fileName) >>= showEvaluatedStringM
+
+printExpression :: String -> IO ()
+printExpression = putStrLn . showEvaluatedString
+
+printFileEval :: FilePath -> IO ()
+printFileEval fileName =  (showEvaledFileFromName fileName) >>= putStrLn
+
+processArgs :: [String] -> IO ()
+processArgs [] = putStrLn "this will go into the REPL"
+processArgs ["-e", expr] = printExpression expr
+processArgs [fileName] = printFileEval fileName
+
 main :: IO ()
-main = printEvaledConsoleInput
+main = getArgs >>= processArgs
